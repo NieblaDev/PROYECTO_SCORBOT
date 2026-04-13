@@ -21,7 +21,6 @@ class ScorbotController:
                 self.ser.open()
                 self.conectado = True
                 
-                # Iniciamos el hilo que escucha constantemente el puerto
                 threading.Thread(target=self._hilo_escucha, daemon=True).start()
                 return True
         except Exception as e:

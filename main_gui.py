@@ -8,12 +8,16 @@ from robot_control import ScorbotController
 class AplicacionGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("Niebla's Scorbot Terminal")
+        self.root.title("Scorbot Terminal")
         self.root.geometry("800x600")
-        self.root.resizable(0,0)
-
+        self.root.minsize(800, 600)
+        
+        try:
+            self.root.iconbitmap("bot.ico")
+        except:
+            pass
+    
         self.robot = ScorbotController(callback_recepcion=self.actualizar_texto_recibido)
-
         self.configurar_interfaz()
 
     def configurar_interfaz(self):
@@ -64,24 +68,31 @@ class AplicacionGUI:
         # --- Cajas de Texto y Botones Inferiores ---
         # Caja de Enviados
         tk.Label(self.root, text="Datos Enviados").place(x=120, y=100)
-        self.TextEnviar = tk.Text(self.root, height=24, width=25)
-        self.TextEnviar.place(x=120, y=120)
+        frame_enviar = tk.Frame(self.root)
+        frame_enviar.place(x=120, y=120)
+        Escrollbar = tk.Scrollbar(frame_enviar)
+        Escrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.TextEnviar = tk.Text(frame_enviar, height=24, width=25, yscrollcommand=Escrollbar.set)
+        self.TextEnviar.pack(side=tk.LEFT, fill=tk.BOTH)
+        Escrollbar.config(command=self.TextEnviar.yview)
 
         # Caja de Recibidos
         tk.Label(self.root, text="Datos Recibidos").place(x=350, y=100)
         frame_recibidos = tk.Frame(self.root)
         frame_recibidos.place(x=350, y=120)
-        scrollbar = tk.Scrollbar(frame_recibidos)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.TextRecibidos = tk.Text(frame_recibidos, height=24, width=50, yscrollcommand=scrollbar.set)
+        Rscrollbar = tk.Scrollbar(frame_recibidos)
+        Rscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.TextRecibidos = tk.Text(frame_recibidos, height=24, width=50, yscrollcommand=Rscrollbar.set)
         self.TextRecibidos.pack(side=tk.LEFT, fill=tk.BOTH)
-        scrollbar.config(command=self.TextRecibidos.yview)
+        self.TextRecibidos.insert("1.0", "Inicio del programa...")
+        self.TextRecibidos.configure(state="disabled")
+        Rscrollbar.config(command=self.TextRecibidos.yview)
 
         # --- Botones Inferiores ---
-        self.btn_enviar = tk.Button(self.root, text="Enviar", command=self.click_enviar)
+        self.btn_enviar = tk.Button(self.root, text="Enviar Secuencia", command=self.click_enviar)
         self.btn_enviar.place(x=120, y=520)
 
-        self.btn_guardar = tk.Button(self.root, text="Guardar", command=self.click_guardar)
+        self.btn_guardar = tk.Button(self.root, text="Guardar Log", command=self.click_guardar)
         self.btn_guardar.place(x=350, y=520)
 
         # --- Texto de Resultados ---
@@ -141,8 +152,6 @@ class AplicacionGUI:
         threading.Thread(target=self.rutina_envio_secuencia, args=(lineas, tiempo_extra), daemon=True).start()
 
     def rutina_envio_secuencia(self, lineas, tiempo_extra, limpiar_caja=True):
-        self.robot.buffer_respuestas = ""
-
         for comando in lineas:
             if comando.strip() == "":
                 continue
@@ -153,36 +162,30 @@ class AplicacionGUI:
                 self.robot.enviar_comando(comando)
 
                 while "ok" not in self.robot.buffer_respuestas.lower():
-                    time.sleep(0.15) 
+                    time.sleep(0.2) 
                     if not self.robot.conectado: return
 
-                # Actualizamos GUI usando .after() (Thread-Safe)
-                self.root.after(0, lambda: self.TextRecibidos.insert(tk.END, "\nOk.\n"))
                 self.root.after(0, lambda c=comando: self.mostrar_resultado(f"Programa '{c}' finalizado con éxito"))
 
             
             else:
+                tiempo_ejecucion = 0 + tiempo_extra
+
                 self.robot.enviar_comando(comando)
                 
-                # 1. ESPERA LÓGICA (Comunicaciones)
-                # Esperamos a que el robot confirme que entendió la orden
+                # 1. ESPERA LÓGICA - Esperamos a que el robot confirme recibo de información
                 while "done" not in self.robot.buffer_respuestas.lower():
                     time.sleep(0.1)
                     if not self.robot.conectado: return
 
-                self.root.after(0, lambda: self.TextRecibidos.insert(tk.END, "\nDone.\n"))
                 self.root.after(0, lambda c=comando: self.mostrar_resultado(f"Comando '{c}' ejecutado"))
 
-                # 2. ESPERA FÍSICA (Motores)
-                # Si la orden era de movimiento, obligamos al PC a darle tiempo a 
-                # los engranajes físicos de llegar a su destino antes de mandar lo siguiente.
+                # 2. ESPERA FÍSICA - Le damos tiempo al robot de moverse
                 if "move" in comando.lower():
                     time.sleep(tiempo_extra)
                 else:
-                    # Si era open o close, solo damos medio segundo de respiro neumático/eléctrico
-                    time.sleep(0.5)
+                    time.sleep(1)
 
-        
         if limpiar_caja:
             self.root.after(0, lambda: self.TextEnviar.delete("1.0", tk.END))
 
