@@ -1,13 +1,13 @@
 speed 30
-move 1
-move 3
+moved 1
+moved 3
 open
-move 4
+moved 4
 close
-move 3
-move 1
-move 5
+moved 3
+moved 1
+moved 5
 open
-move 1
+moved 1
 close
-move 0
+moved 0

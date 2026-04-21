@@ -3,8 +3,13 @@ from tkinter import ttk, messagebox
 from tkinter.filedialog import asksaveasfilename, askopenfilename
 import threading
 import time
+
+# IMPORTANTE: Aquí importamos tu controlador separado
 from robot_control import ScorbotController
 
+# =========================================================
+# INTERFAZ GRÁFICA (GUI)
+# =========================================================
 class AplicacionGUI:
     def __init__(self, root):
         self.root = root
@@ -21,34 +26,25 @@ class AplicacionGUI:
         self.configurar_interfaz()
 
     def configurar_interfaz(self):
-        # Configuramos el grid principal de la ventana para que se expanda
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
 
-        # --- CONTENEDOR PRINCIPAL ---
         main_frame = tk.Frame(self.root, padx=10, pady=10)
         main_frame.grid(row=0, column=0, sticky="nsew")
-        
-        # Grid del main_frame
-        main_frame.columnconfigure(1, weight=1) # La columna central (cajas de texto) se expandirá
-        main_frame.rowconfigure(1, weight=1)    # La fila central (cajas de texto) se expandirá
+        main_frame.columnconfigure(1, weight=1) 
+        main_frame.rowconfigure(1, weight=1)    
 
-        # =========================================================
-        # 1. PANEL SUPERIOR (Estado, Conexión, Temporizador)
-        # =========================================================
+        # --- PANEL SUPERIOR ---
         top_frame = tk.Frame(main_frame)
         top_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 15))
 
-        # Estado
         tk.Label(top_frame, text="Estado :").grid(row=0, column=0, sticky="w", padx=(0, 5), pady=2)
         self.TextoEstado = tk.Text(top_frame, height=1, width=17, bg="white")
         self.TextoEstado.insert("1.0", "DESCONECTADO")
         self.TextoEstado.configure(state="disabled")
         self.TextoEstado.grid(row=0, column=1, sticky="w", padx=(0, 15), pady=2)
 
-        # Conexión
         tk.Label(top_frame, text="Puerto :").grid(row=1, column=0, sticky="w", padx=(0, 5), pady=2)
-        
         conn_frame = tk.Frame(top_frame)
         conn_frame.grid(row=1, column=1, sticky="w", pady=2)
         self.comboBox1 = ttk.Combobox(conn_frame, state="readonly", values=[f"COM{i}" for i in range(1, 10)], width=10)
@@ -61,22 +57,17 @@ class AplicacionGUI:
         self.btn_desconectar = tk.Button(conn_frame, text="Desconectar", command=self.click_desconectar)
         self.btn_desconectar.pack(side=tk.LEFT, padx=(5, 0))
 
-        # Temporizador
         tk.Label(top_frame, text="Temporizador :").grid(row=2, column=0, sticky="w", padx=(0, 5), pady=2)
         temp_frame = tk.Frame(top_frame)
         temp_frame.grid(row=2, column=1, sticky="w", pady=2)
-        
         self.ComboBoxT = ttk.Combobox(temp_frame, state="readonly", values=list(range(1, 11)), width=10)
         self.ComboBoxT.set(3)
         self.ComboBoxT.pack(side=tk.LEFT, padx=(0, 10))
         tk.Label(temp_frame, text="(Recomendado 3 segundos)", fg="gray").pack(side=tk.LEFT)
 
-        # =========================================================
-        # 2. PANEL IZQUIERDO (Botones de acción directa)
-        # =========================================================
+        # --- PANEL IZQUIERDO ---
         left_frame = tk.Frame(main_frame, width=120)
         left_frame.grid(row=1, column=0, sticky="ns", padx=(0, 15))
-        
         tk.Label(left_frame, text="Acciones Directas").pack(pady=(0, 5), fill=tk.X)
         
         acciones = [
@@ -93,20 +84,15 @@ class AplicacionGUI:
             if texto_btn == "Abortar":
                 btn.config(bg="red", fg="white", font=("Arial", 9 ,"bold"))
 
-        # =========================================================
-        # 3. PANEL CENTRAL (Cajas de texto y Botones)
-        # =========================================================
+        # --- PANEL CENTRAL ---
         center_frame = tk.Frame(main_frame)
         center_frame.grid(row=1, column=1, sticky="nsew")
-        
-        # Configuramos el center_frame para que ambas columnas crezcan igual
         center_frame.columnconfigure(0, weight=1)
         center_frame.columnconfigure(1, weight=1) 
         center_frame.rowconfigure(1, weight=1)
 
-# --- Columna 0: Datos Enviados ---
+        # Columna 0: Datos Enviados
         tk.Label(center_frame, text="Datos Enviados").grid(row=0, column=0, sticky="w")
-        
         frame_enviar = tk.Frame(center_frame)
         frame_enviar.grid(row=1, column=0, sticky="nsew", padx=(0, 5), pady=(5, 0))
         
@@ -116,23 +102,17 @@ class AplicacionGUI:
         self.TextEnviar.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         Escrollbar.config(command=self.TextEnviar.yview)
 
-        # Sub-contenedor para agrupar los 3 botones de secuencias
         btn_frame_enviados = tk.Frame(center_frame)
         btn_frame_enviados.grid(row=2, column=0, sticky="w", padx=(0, 5), pady=(5, 0))
-
         self.btn_enviar = tk.Button(btn_frame_enviados, text="Enviar", width=10, command=self.click_enviar)
         self.btn_enviar.pack(side=tk.LEFT, padx=(0, 5))
-
         self.btn_cargar = tk.Button(btn_frame_enviados, text="Cargar", width=10, command=self.click_cargar_secuencia)
         self.btn_cargar.pack(side=tk.LEFT, padx=(0, 5))
-
         self.btn_guardar_sec = tk.Button(btn_frame_enviados, text="Guardar", width=10, command=self.click_guardar_secuencia)
         self.btn_guardar_sec.pack(side=tk.LEFT)
 
-
-# --- Columna 1: Datos Recibidos ---
+        # Columna 1: Datos Recibidos
         tk.Label(center_frame, text="Datos Recibidos").grid(row=0, column=1, sticky="w")
-        
         frame_recibidos = tk.Frame(center_frame)
         frame_recibidos.grid(row=1, column=1, sticky="nsew", padx=(5, 0), pady=(5, 0))
         
@@ -145,24 +125,25 @@ class AplicacionGUI:
         self.TextRecibidos.configure(state="disabled") 
         Rscrollbar.config(command=self.TextRecibidos.yview)
 
-        # Botón debajo de Recibidos (Guardar Log de ejecución)
         self.btn_guardar_log = tk.Button(center_frame, text="Guardar Log", width=10, command=self.click_guardar_log)
         self.btn_guardar_log.grid(row=2, column=1, sticky="w", padx=(5, 0), pady=(5, 0))
         
-        # =========================================================
-        # 4. PANEL INFERIOR (Solo Resultados)
-        # =========================================================
+        # --- PANEL INFERIOR ---
         bottom_frame = tk.Frame(main_frame)
         bottom_frame.grid(row=2, column=1, sticky="ew", pady=(15, 0))
-
         tk.Label(bottom_frame, text="Estado de envío:").pack(side=tk.LEFT, padx=(0, 5))
         self.lbl_resultado = tk.Label(bottom_frame, text="Esperando comandos...", fg="gray")
         self.lbl_resultado.pack(side=tk.LEFT)
 
     # =========================================================
-    # LÓGICA DE LA INTERFAZ (Mantenida idéntica)
+    # LÓGICA DE LA INTERFAZ
     # =========================================================
+
+    # ¡ESTE ES EL PARCHE CRÍTICO PARA EVITAR EL DEADLOCK!
     def actualizar_texto_recibido(self, texto):
+        self.root.after(0, lambda: self._escribir_en_caja(texto))
+        
+    def _escribir_en_caja(self, texto):
         self.TextRecibidos.configure(state="normal")
         self.TextRecibidos.insert(tk.END, texto)
         self.TextRecibidos.see(tk.END)
@@ -184,7 +165,7 @@ class AplicacionGUI:
             self.cambiar_estado("Conectado", "LIME")
             messagebox.showinfo("Atención", "Puerto Conectado")
         else:
-            messagebox.showerror("Error", "Error al conectar puerto")
+            messagebox.showerror("Error", "Error al conectar puerto. Desconecte y conecte el USB por última vez.")
 
     def click_desconectar(self):
         self.robot.desconectar()
@@ -197,7 +178,7 @@ class AplicacionGUI:
 
     def click_enviar(self):
         if not self.robot.conectado:
-            messagebox.showinfo("Atención", "Primero debe conectarse con el puerto COM seleccionado")
+            messagebox.showinfo("Atención", "Primero debe conectarse con el puerto COM")
             return
 
         msj = self.TextEnviar.get("1.0", tk.END)
@@ -206,51 +187,35 @@ class AplicacionGUI:
 
         threading.Thread(target=self.rutina_envio_secuencia, args=(lineas, tiempo_instruccion), daemon=True).start()
 
-    def rutina_envio_secuencia(self, lineas, tiempo_instruccion, limpiar_caja=True):
+    def rutina_envio_secuencia(self, lineas, tiempo_instruccion):
         for comando in lineas:
-            if comando.strip() == "":
+            comando = comando.strip()
+            if comando == "":
                 continue
-
-            self.robot.buffer_respuestas = ""
-
-            if "Run" in comando:
-                self.robot.enviar_comando(comando)
-
-                while "ok" not in self.robot.buffer_respuestas.lower():
-                    time.sleep(0.2) 
-                    if not self.robot.conectado: return
-
-                self.root.after(0, lambda c=comando: self.mostrar_resultado(f"Programa '{c}' finalizado con éxito"))
             
-            else:
-                self.robot.enviar_comando(comando)
-                
-                # 1. ESPERA LÓGICA
-                while "done" not in self.robot.buffer_respuestas.lower():
-                    time.sleep(0.1)
-                    if not self.robot.conectado: return
+            # Limpiamos ANTES de enviar para buscar una respuesta fresca
+            self.robot.buffer_respuestas = "" 
+            self.robot.enviar_comando(comando)
+            
+            while ">" not in self.robot.buffer_respuestas:
+                time.sleep(0.1)
+                if not self.robot.conectado: return
 
-                self.root.after(0, lambda c=comando: self.mostrar_resultado(f"Comando '{c}' ejecutado"))
+            self.root.after(0, lambda c=comando: self.mostrar_resultado(f"Enviado: {c}"))
+            time.sleep(tiempo_instruccion)
 
-                # 2. ESPERA FÍSICA
-                if "move" in comando.lower():
-                    time.sleep(tiempo_instruccion)
-                else:
-                    time.sleep(0.5)
-
-        if limpiar_caja:
-            self.root.after(0, lambda: self.TextEnviar.delete("1.0", tk.END))
+        self.root.after(0, lambda: self.TextEnviar.delete("1.0", tk.END))
 
     def click_cargar_secuencia(self):
-            filepath = askopenfilename(defaultextension="txt", filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
-            if filepath:
-                try:
-                    with open(filepath, "r") as input_file:
-                        text = input_file.read()
-                        self.TextEnviar.delete("1.0", tk.END)
-                        self.TextEnviar.insert("1.0", text)
-                except Exception as e:
-                    messagebox.showerror("Error", f"No se pudo cargar el archivo: {e}")
+        filepath = askopenfilename(defaultextension="txt", filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
+        if filepath:
+            try:
+                with open(filepath, "r") as input_file:
+                    text = input_file.read()
+                    self.TextEnviar.delete("1.0", tk.END)
+                    self.TextEnviar.insert("1.0", text)
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudo cargar: {e}")
 
     def click_guardar_secuencia(self):
         filepath = asksaveasfilename(defaultextension="txt", filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
@@ -260,14 +225,14 @@ class AplicacionGUI:
                     text = self.TextEnviar.get("1.0", tk.END)
                     output_file.write(text)
             except Exception as e:
-                messagebox.showerror("Error", f"No se pudo guardar la secuencia: {e}")
+                messagebox.showerror("Error", f"No se pudo guardar: {e}")
 
     def click_guardar_log(self):
         filepath = asksaveasfilename(defaultextension="txt", filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
         if filepath:
             try:
                 with open(filepath, "w") as output_file:
-                    text = self.TextRecibidos.get("1.0", tk.END) # Ahora guarda el Log real del robot
+                    text = self.TextRecibidos.get("1.0", tk.END) 
                     output_file.write(text)
             except Exception as e:
                 messagebox.showerror("Error", f"No se pudo guardar el log: {e}")
