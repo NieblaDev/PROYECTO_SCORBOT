@@ -6,10 +6,11 @@ from tkinter.filedialog import asksaveasfilename
 import threading
 import time
 import cv2
+import numpy as np # IMPORTANTE: Agrega numpy
 from PIL import Image, ImageTk
+from ultralytics import YOLO # IMPORTANTE: Importamos YOLOv11
 
 from robot_control import ScorbotController
-# from mock_control import ScorbotController
 
 class AplicacionGUI:
     def __init__(self, root):
@@ -30,6 +31,15 @@ class AplicacionGUI:
 
         self.cap = None
         self.camara_activa = False
+
+        # --- NUEVO: INICIALIZAR YOLO ---
+        # Usamos el modelo 'nano' (yolo11n.pt) porque es el más rápido para video en tiempo real.
+        # Si es la primera vez, se descargará automáticamente de internet.
+        self.modelo_yolo = YOLO("yolo11n.pt") 
+        self.objetivo_detectado_px = None # Almacenará la tupla (x, y) del centro del objeto
+        
+        self.robot = ScorbotController(callback_recepcion=self.actualizar_texto_recibido)
+        # ... (resto del init)
 
         self.robot = ScorbotController(callback_recepcion=self.actualizar_texto_recibido)
         self.root.bind("<Escape>", self.abortar_emergencia)
@@ -71,7 +81,7 @@ class AplicacionGUI:
         self.btn_desconectar.grid(row=0, column=6, padx=(5, 0))
 
         # Selector de Temas
-        lista_temas = ["darkly", "solar", "flatly", "litera", "superhero", "cyborg"]
+        lista_temas = ["darkly", "flatly", "superhero", "cyborg"]
         frame_tema = ttk.Frame(top_frame)
         frame_tema.grid(row=0, column=8, sticky="e") 
         
@@ -123,7 +133,6 @@ class AplicacionGUI:
         video_container.pack(side=TOP, fill=BOTH, expand=True)
         video_container.bind("<Configure>", self.evento_redimensionar_camara)
         
-        # Agregamos texto inicial para que no esté simplemente vacío
         self.lbl_video = ttk.Label(video_container, text="Cámara Apagada", foreground="gray", font=("Helvetica", 14), anchor="center")
         self.lbl_video.place(relx=0.5, rely=0.5, anchor="center")
 
@@ -142,7 +151,7 @@ class AplicacionGUI:
 
         frame_botones_reci = ttk.Frame(textos_frame)
         frame_botones_reci.grid(row=2, column=0, sticky="ew", pady=(10,10))
-        self.btn_guardar_log = ttk.Button(frame_botones_reci, text="Guardar Log", width=17, bootstyle="info", command=self.click_guardar_log)
+        self.btn_guardar_log = ttk.Button(frame_botones_reci, text="Guardar Log", width=17, bootstyle="primary", command=self.click_guardar_log)
         self.btn_guardar_log.pack(side=LEFT)
         self.btn_limpiar_log = ttk.Button(frame_botones_reci, text="Limpiar Log", width=17, bootstyle="warning", command=self.click_borrar_log)
         self.btn_limpiar_log.pack(side=RIGHT)
@@ -200,11 +209,8 @@ class AplicacionGUI:
         self.btn_encender_cam.configure(state="disabled", text="Conectando...")
         self.btn_apagar_cam.configure(state="disabled")
         
-        # Mostramos un mensaje de espera en el centro de la pantalla
         self.lbl_video.configure(image='', text="Iniciando hardware de visión...\nPor favor espere.", foreground="white")
         self.lbl_video.image = None
-        
-        # EL TRUCO: Forzamos a la interfaz a dibujarse AHORA MISMO
         self.root.update()
 
         # 2. LIBERAR CÁMARA ANTERIOR
@@ -213,7 +219,7 @@ class AplicacionGUI:
             self.cap.release()
             self.cap = None
         
-        # 3. ABRIR NUEVA CÁMARA (Esta es la línea que consume tiempo)
+        # 3. ABRIR NUEVA CÁMARA
         idx_str = self.combo_camaras.get()
         idx = int(idx_str.split(" ")[-1])
         self.cap = cv2.VideoCapture(idx)
