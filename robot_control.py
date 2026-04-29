@@ -52,24 +52,49 @@ class ScorbotController:
                 self.ser = None
 
     def enviar_comando(self, comando):
-        if self.conectado and self.ser and self.ser.is_open:
-            try:
-                comando = comando.strip()
-                self.ser.write(comando.encode('ascii') + b"\r")
-            except Exception as e:
-                print(f"Error de envío: {e}")
-            
+            if self.conectado and self.ser and self.ser.is_open:
+                try:
+                    comando = comando.strip()
+                    
+                    # 1. Transformamos el texto a una cadena de bits ASCII 
+                    # 2. Le concatenamos el bit de "Enter" que requiere el controlador SCORBOT
+                    instruccion_bits = comando.encode('ascii') + b"\r"
+                    
+                    # 3. Escribimos la instrucción en el puerto serial
+                    self.ser.write(instruccion_bits)
+                    
+                    # 4. CRÍTICO: Obligamos al puerto a vaciar su buffer y enviar el paquete 
+                    # completo inmediatamente, evitando que el Scorbot lo reciba entrecortado.
+                    self.ser.flush() 
+                    
+                except Exception as e:
+                    print(f"Error de envío: {e}")
+                
     def _hilo_escucha(self):
+        buffer_linea = "" # Almacenador temporal para formar frases completas
+        
         while self.conectado:
             try:
                 if self.ser and self.ser.is_open and self.ser.in_waiting > 0:
                     datos_crudos = self.ser.read(self.ser.in_waiting)
+                    # Decodificamos los bits de respuesta a texto
                     datos = datos_crudos.decode('ascii', errors='ignore')
                     
                     if datos:
+                        # Actualizamos el historial global para la lógica interna (como tu rutina_envio)
                         self.buffer_respuestas += datos
-                        if self.callback:
-                            self.callback(datos)
+                        
+                        # Sumamos la información al buffer local para la Interfaz Gráfica
+                        buffer_linea += datos
+                        
+                        # Si en el texto recibido viene un Enter (\r o \n) o el símbolo de espera del Scorbot (>)
+                        # significa que el mensaje está completo y es hora de mostrarlo.
+                        if '\r' in buffer_linea or '\n' in buffer_linea or '>' in buffer_linea:
+                            if self.callback:
+                                self.callback(buffer_linea)
+                            # Vaciamos el acumulador para la siguiente frase
+                            buffer_linea = "" 
+                            
             except serial.SerialException:
                 self.conectado = False
                 print("Conexión serial perdida.")
@@ -77,4 +102,6 @@ class ScorbotController:
             except Exception:
                 pass
             
-            time.sleep(0.05)
+            # Bajamos el tiempo de espera de 0.05 a 0.02 para que reaccione más rápido
+            # pero sin saturar el procesador de tu computadora
+            time.sleep(0.02)

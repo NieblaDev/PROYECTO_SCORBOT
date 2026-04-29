@@ -1,14 +1,12 @@
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
-from ttkbootstrap.scrolled import ScrolledText
+from ttkbootstrap.widgets.scrolled import ScrolledText
 from ttkbootstrap.dialogs import Messagebox
 from tkinter.filedialog import asksaveasfilename
 import threading
 import time
 import cv2
-import numpy as np # IMPORTANTE: Agrega numpy
 from PIL import Image, ImageTk
-from ultralytics import YOLO # IMPORTANTE: Importamos YOLOv11
 
 from robot_control import ScorbotController
 
@@ -31,15 +29,6 @@ class AplicacionGUI:
 
         self.cap = None
         self.camara_activa = False
-
-        # --- NUEVO: INICIALIZAR YOLO ---
-        # Usamos el modelo 'nano' (yolo11n.pt) porque es el más rápido para video en tiempo real.
-        # Si es la primera vez, se descargará automáticamente de internet.
-        self.modelo_yolo = YOLO("yolo11n.pt") 
-        self.objetivo_detectado_px = None # Almacenará la tupla (x, y) del centro del objeto
-        
-        self.robot = ScorbotController(callback_recepcion=self.actualizar_texto_recibido)
-        # ... (resto del init)
 
         self.robot = ScorbotController(callback_recepcion=self.actualizar_texto_recibido)
         self.root.bind("<Escape>", self.abortar_emergencia)
