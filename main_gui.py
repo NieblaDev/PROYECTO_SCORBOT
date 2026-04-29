@@ -1,3 +1,4 @@
+#ULTIMA VERSION ANTES DE REESTRUCTURA DE PROYECTO
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from ttkbootstrap.widgets.scrolled import ScrolledText
