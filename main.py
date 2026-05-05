@@ -55,7 +55,7 @@ class AplicacionGUI:
         # Opciones de puerto
         ttk.Label(top_frame, text="Puerto:", font=("Helvetica", 10)).pack(side=LEFT, padx=(0, 5))
         self.combo_puerto = ttk.Combobox(top_frame, values=[f"COM{i}" for i in range(1, 10)], width=8)
-        self.combo_puerto.set("COM1")
+        self.combo_puerto.set("COM5")
         self.combo_puerto.pack(side=LEFT, padx=(0, 15))
         
         # Botones conexión
