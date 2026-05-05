@@ -25,11 +25,6 @@ class ScorbotController:
                 timeout=0.2
             )
             self.conectado = True
-            self.ser.reset_input_buffer()
-            self.ser.reset_output_buffer()
-            self.ser.write(b"|echo\r\r\r")
-            time.sleep(0.1)
-            self.ser.read_all()
             return True
         except Exception as e:
             print("Error conectando:", e)
@@ -48,15 +43,15 @@ class ScorbotController:
             return ""
         
         # Formato básico para comandos ACL (normalmente terminan en retorno de carro)
-        cmd_str = f"{cmd.strip()}\r"
+        cmd_str = cmd.strip()
         
         try:
-            self.ser.write(cmd_str.encode('ascii'))
+            self.ser.write(cmd_str.encode()+b"\r")
             self.ser.flush()
-            time.sleep(0.05)
             # Leer respuesta
             data = self.ser.read_all()
-            return data.decode("ascii", errors="ignore") if data else ""
+            return data if data else ""
+
         except Exception as e:
             print("Error enviando:", e)
             return ""
@@ -66,7 +61,6 @@ class ScorbotController:
         if self.conectado:
             try:
                 self.ser.write(b"a\r")
-                self.ser.flush()
             except:
                 pass
 

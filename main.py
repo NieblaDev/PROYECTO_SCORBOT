@@ -165,6 +165,8 @@ class AplicacionGUI:
             self.sesion_activa = True
             self.tiempo_inicio_sesion = time.time()
             self.escribir_en_terminal("Conexión establecida con éxito.")
+
+            self.escribir_en_terminal(self.robot.enviar_comando("|echo\r\r\r"))
         else:
             Messagebox.show_error(f"No se pudo conectar al puerto {puerto}.", "Error de conexión")
             self.escribir_en_terminal("Fallo al conectar.")
@@ -225,11 +227,10 @@ class AplicacionGUI:
         if not comando:
             return "break"
 
-        self.escribir_en_terminal(f"> {comando}")
         respuesta = self.robot.enviar_comando(comando)
         
         if respuesta:
-            self.escribir_en_terminal(respuesta.strip())
+            self.escribir_en_terminal(respuesta)
             
         return "break"
 
